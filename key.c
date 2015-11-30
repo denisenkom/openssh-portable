@@ -131,6 +131,33 @@ key_to_blob(const Key *key, u_char **blobp, u_int *lenp)
 }
 
 int
+key_sign_raw(const Key *key, u_char **sigp, u_int *lenp,
+	 const u_char *data, u_int datalen)
+{
+	int r;
+	u_char *sig;
+	size_t siglen;
+
+	if (sigp != NULL)
+		*sigp = NULL;
+	if (lenp != NULL)
+		*lenp = 0;
+	if ((r = sshkey_sign_raw(key, &sig, &siglen,
+						 data, datalen, datafellows)) != 0) {
+		fatal_on_fatal_errors(r, __func__, 0);
+		error("%s: %s", __func__, ssh_err(r));
+		return -1;
+	}
+	if (siglen > INT_MAX)
+		fatal("%s: giant len %zu", __func__, siglen);
+	if (sigp != NULL)
+		*sigp = sig;
+	if (lenp != NULL)
+		*lenp = siglen;
+	return 0;
+}
+
+int
 key_sign(const Key *key, u_char **sigp, u_int *lenp,
     const u_char *data, u_int datalen)
 {

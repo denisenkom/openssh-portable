@@ -36,6 +36,49 @@
 
 static int openssh_RSA_verify(int, u_char *, size_t, u_char *, size_t, RSA *);
 
+/* RSASSA-PKCS1-v1_5 (PKCS #1 v2.0 signature) only padding and RSA part, no hashing */
+int
+ssh_rsa_sign_raw(const struct sshkey *key, u_char **sigp, size_t *lenp,
+    const u_char *data, size_t datalen, u_int compat)
+{
+	size_t slen;
+	u_int len;
+	int ret = SSH_ERR_INTERNAL_ERROR;
+
+	if (lenp != NULL)
+		*lenp = 0;
+	if (sigp != NULL)
+		*sigp = NULL;
+
+	if (key == NULL || key->rsa == NULL ||
+	    sshkey_type_plain(key->type) != KEY_RSA)
+		return SSH_ERR_INVALID_ARGUMENT;
+	len = slen = RSA_size(key->rsa);
+	if (slen <= 0 || slen > SSHBUF_MAX_BIGNUM)
+		return SSH_ERR_INVALID_ARGUMENT;
+
+	if (sigp != NULL) {
+		if ((*sigp = malloc(slen)) == NULL) {
+			ret = SSH_ERR_ALLOC_FAIL;
+			goto out;
+		}
+
+		if (RSA_sign(0, data, datalen, *sigp, &len, key->rsa) != 1) {
+			ret = SSH_ERR_LIBCRYPTO_ERROR;
+			goto out;
+		}
+		if (len > slen) {
+			ret = SSH_ERR_INTERNAL_ERROR;
+			goto out;
+		}
+	}
+	if (lenp != NULL)
+		*lenp = len;
+	ret = 0;
+ out:
+	return ret;
+}
+
 /* RSASSA-PKCS1-v1_5 (PKCS #1 v2.0 signature) with SHA1 */
 int
 ssh_rsa_sign(const struct sshkey *key, u_char **sigp, size_t *lenp,

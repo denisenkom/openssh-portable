@@ -168,6 +168,8 @@ int	 sshkey_puts(const struct sshkey *, struct sshbuf *);
 int	 sshkey_plain_to_blob(const struct sshkey *, u_char **, size_t *);
 int	 sshkey_putb_plain(const struct sshkey *, struct sshbuf *);
 
+int	 sshkey_sign_raw(const struct sshkey *, u_char **, size_t *,
+	const u_char *, size_t, u_int);
 int	 sshkey_sign(const struct sshkey *, u_char **, size_t *,
     const u_char *, size_t, u_int);
 int	 sshkey_verify(const struct sshkey *, const u_char *, size_t,

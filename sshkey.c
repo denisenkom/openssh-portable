@@ -2172,6 +2172,28 @@ sshkey_froms(struct sshbuf *buf, struct sshkey **keyp)
 }
 
 int
+sshkey_sign_raw(const struct sshkey *key,
+	u_char **sigp, size_t *lenp,
+	const u_char *data, size_t datalen, u_int compat)
+{
+	if (sigp != NULL)
+		*sigp = NULL;
+	if (lenp != NULL)
+		*lenp = 0;
+	if (datalen > SSH_KEY_MAX_SIGN_DATA_SIZE)
+		return SSH_ERR_INVALID_ARGUMENT;
+	switch (key->type) {
+#ifdef WITH_OPENSSL
+	case KEY_RSA_CERT:
+	case KEY_RSA:
+		return ssh_rsa_sign_raw(key, sigp, lenp, data, datalen, compat);
+#endif /* WITH_OPENSSL */
+	default:
+		return SSH_ERR_KEY_TYPE_UNKNOWN;
+	}
+}
+
+int
 sshkey_sign(const struct sshkey *key,
     u_char **sigp, size_t *lenp,
     const u_char *data, size_t datalen, u_int compat)
